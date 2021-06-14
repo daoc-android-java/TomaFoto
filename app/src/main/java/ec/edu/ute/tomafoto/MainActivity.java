@@ -1,30 +1,17 @@
 package ec.edu.ute.tomafoto;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.ActivityCompat;
-import androidx.core.content.FileProvider;
 
-import android.Manifest;
 import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
-import android.os.StrictMode;
 import android.provider.DocumentsContract;
 import android.provider.MediaStore;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.Toast;
-
-import java.io.File;
-import java.io.IOException;
-import java.net.URI;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 
 /**
  * Usar camara del sistema
@@ -49,18 +36,21 @@ public class MainActivity extends AppCompatActivity {
 
     /**
      Toma foto y la guarda en Public storage
-     (tambin recupera el preview)
+     https://developer.android.com/training/data-storage/shared/documents-files
      */
     public void guardarFoto(View view) {
-        URI picturesDirUri = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES).toURI();
         Intent intent = new Intent(Intent.ACTION_CREATE_DOCUMENT);
         intent.addCategory(Intent.CATEGORY_OPENABLE);
 
         String mimeType = "image/jpg";
-        String filename = "JPG_"+System.currentTimeMillis() + ".jpg";
         intent.setType(mimeType);
+
+        String filename = "JPG_"+System.currentTimeMillis() + ".jpg";
         intent.putExtra(Intent.EXTRA_TITLE, filename);
+
+        Uri picturesDirUri = Uri.fromFile(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES));
         intent.putExtra(DocumentsContract.EXTRA_INITIAL_URI, picturesDirUri);
+
         startActivityForResult(intent, 2);
     }
 
@@ -73,9 +63,13 @@ public class MainActivity extends AppCompatActivity {
 
         if(resultCode == RESULT_OK && requestCode == 1) {
             //recupera un "preview" de la foto
-            Bitmap bmp = (Bitmap) data.getExtras().get("data");
-            ImageView imageView = findViewById(R.id.imageView);
-            imageView.setImageBitmap(bmp);
+            if(data.getExtras() != null) {
+                Bitmap bmp = (Bitmap) data.getExtras().get("data");
+                ImageView imageView = findViewById(R.id.imageView);
+                imageView.setImageBitmap(bmp);
+            } else {
+                Toast.makeText(this, "RESULT_OK pero Intent.Bundle == null", Toast.LENGTH_LONG);
+            }
         }
 
         if(resultCode == RESULT_OK && requestCode == 2) {
@@ -85,7 +79,7 @@ public class MainActivity extends AppCompatActivity {
             Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
             intent.putExtra(MediaStore.EXTRA_OUTPUT, uri);
             intent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
-            startActivityForResult(intent, 3);
+            startActivityForResult(intent, 1);
         }
     }
 
